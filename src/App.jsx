@@ -1,11 +1,16 @@
-import { createMemo, createSignal } from "solid-js";
+import { createMemo, createSignal, splitProps } from "solid-js";
 
-const formattedTodo = (todo) =>
-  createMemo(() => `${todo.title} - ${todo.finished ? "DONE" : "ACTIVE"}`);
+const formattedTodo = (todo) => {
+  return createMemo(
+    () => `${todo.title} - ${todo.finished ? "DONE" : "ACTIVE"}`
+  );
+};
 
 const Todo = (props) => {
   const [editedTitle, setEditedTitle] = createSignal(props.todo.title);
   const [editMode, setEditMode] = createSignal(false);
+
+  const [data, actions] = splitProps(props, ["todo"]);
 
   return (
     <>
@@ -15,13 +20,13 @@ const Todo = (props) => {
           onInput={(e) => setEditedTitle(e.target.value)}
         />
       ) : (
-        <p>{formattedTodo(props.todo)()}</p>
+        <p>{formattedTodo(data.todo)()}</p>
       )}
 
       {editMode() ? (
         <button
           onClick={() =>
-            props.updateTodo({ ...props.todo, title: editedTitle() })
+            actions.updateTodo({ ...data.todo, title: editedTitle() })
           }>
           Save
         </button>
@@ -29,14 +34,14 @@ const Todo = (props) => {
         <button onClick={() => setEditMode(true)}>Edit</button>
       )}
 
-      {!props.todo.finished && (
+      {!data.todo.finished && (
         <button
-          onClick={() => props.updateTodo({ ...props.todo, finished: true })}>
+          onClick={() => actions.updateTodo({ ...data.todo, finished: true })}>
           Finish
         </button>
       )}
 
-      <button onClick={() => props.deleteTodo(props.todo)}>Delete</button>
+      <button onClick={() => actions.deleteTodo(data.todo)}>Delete</button>
     </>
   );
 };
