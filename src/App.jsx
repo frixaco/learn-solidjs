@@ -1,4 +1,12 @@
-import { createMemo, createSignal, splitProps } from "solid-js";
+import {
+  children,
+  createEffect,
+  createMemo,
+  createSignal,
+  For,
+  splitProps,
+} from "solid-js";
+import styles from "./App.module.css";
 
 const formattedTodo = (todo) => {
   return createMemo(
@@ -13,7 +21,7 @@ const Todo = (props) => {
   const [data, actions] = splitProps(props, ["todo"]);
 
   return (
-    <>
+    <div>
       {editMode() ? (
         <input
           value={editedTitle()}
@@ -41,23 +49,24 @@ const Todo = (props) => {
         </button>
       )}
 
-      <button onClick={() => actions.deleteTodo(data.todo)}>Delete</button>
-    </>
+      <button onClick={() => actions.deleteTodo(data.todo.id)}>Delete</button>
+    </div>
   );
 };
 
 const ListTodos = (props) => {
+  const memo = children(() => props.children);
+  const [counter, setCounter] = createSignal(0);
+
+  createEffect(() => setCounter(memo().length));
+  // Below code won't work (because props.children.length is not "reactive"?)
+  // createEffect(() => setCounter(props.children.length));
+
   return (
-    <div>
-      <For each={props.todos}>
-        {(todo) => (
-          <Todo
-            todo={todo}
-            updateTodo={props.updateTodo}
-            deleteTodo={props.deleteTodo}
-          />
-        )}
-      </For>
+    <div class={styles.todo}>
+      <div>{memo()}</div>
+      {/* <div>{props.children}</div> */}
+      <p>Total todos: {counter()}</p>
     </div>
   );
 };
@@ -71,14 +80,14 @@ const AddTodos = (props) => {
   };
 
   return (
-    <>
+    <div>
       <input
         type="text"
         onInput={(e) => setTitle(e.target.value)}
         value={title()}
       />
       {title && <button onClick={addTodo}>Add</button>}
-    </>
+    </div>
   );
 };
 
@@ -94,15 +103,23 @@ function App() {
           count={todos().length}
         />
 
-        <ListTodos
-          updateTodo={(todo) =>
-            setTodos(todos().map((t) => (t.id === todo.id ? todo : t)))
-          }
-          deleteTodo={(todo) =>
-            setTodos(todos().filter((t) => t.id !== todo.id))
-          }
-          todos={todos()}
-        />
+        <ListTodos>
+          <For each={todos()}>
+            {(todo) => (
+              <Todo
+                todo={todo}
+                updateTodo={(newTodo) =>
+                  setTodos(
+                    todos().map((t) => (t.id === newTodo.id ? newTodo : t))
+                  )
+                }
+                deleteTodo={(todoId) =>
+                  setTodos(todos().filter((t) => t.id !== todoId))
+                }
+              />
+            )}
+          </For>
+        </ListTodos>
       </div>
 
       <div>
